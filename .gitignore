@@ -1,0 +1,14 @@
+!.gitignore
+.project
+.idea
+*.iml
+vendor
+.vendor-new
+target
+build
+git.json
+test-results/
+playwright-report/
+__debug_bin
+.vscode/
+*.log
