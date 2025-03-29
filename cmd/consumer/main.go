@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/IBM/sarama"
 )
@@ -112,7 +113,9 @@ func main() {
 				if errors.Is(err, sarama.ErrClosedConsumerGroup) {
 					return
 				}
-				log.Panicf("Error from consumer: %v", err)
+				log.Printf("Error from consumer, waiting before restart: %v", err)
+				t := time.NewTimer(time.Second * 5)
+				<-t.C
 			}
 			// check if context was cancelled, signaling that the consumer should stop
 			if ctx.Err() != nil {
