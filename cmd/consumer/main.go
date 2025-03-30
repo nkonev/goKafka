@@ -87,6 +87,10 @@ func main() {
 		config.Consumer.Offsets.Initial = sarama.OffsetOldest
 	}
 
+	// https://medium.com/@moabbas.ch/effective-kafka-consumption-in-golang-a-comprehensive-guide-aac54b5b79f0
+	config.Consumer.Fetch.Default = 2 * 1024 * 1024 // 2MB
+	config.Consumer.MaxWaitTime = 200 * time.Millisecond
+
 	/**
 	 * Setup a new Sarama consumer group
 	 */
@@ -197,7 +201,9 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 				log.Printf("message channel was closed")
 				return nil
 			}
-			log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+
+			// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+
 			session.MarkMessage(message, "")
 		// Should return when `session.Context()` is done.
 		// If not, will raise `ErrRebalanceInProgress` or `read tcp <ip>:<port>: i/o timeout` when kafka rebalance. see:
