@@ -1,6 +1,6 @@
 ```
-go run ./cmd/producer/... --brokers=127.0.0.1:9092 --topic ololo --producers 1
-go run ./cmd/consumer/... --brokers=127.0.0.1:9092 --topics ololo --group myg
+go run ./cmd/producer/... --brokers=127.0.0.1:9092 --topic ololo
+go run ./cmd/consumer/... --brokers=127.0.0.1:9092 --topics ololo --group myg --print=false
 
 docker exec -it kafka bash
 watch -n 1 /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server kafka:29092 --describe --group myg --offsets

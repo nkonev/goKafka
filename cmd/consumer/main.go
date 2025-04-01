@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"github.com/rcrowley/go-metrics"
 	"log"
 	"os"
 	"os/signal"
@@ -27,6 +28,11 @@ var (
 	assignor = ""
 	oldest   = true
 	verbose  = false
+	print    = true
+
+	recordsNumber int64 = 1
+
+	recordsRate = metrics.GetOrRegisterMeter("records.rate", nil)
 )
 
 func init() {
@@ -37,6 +43,7 @@ func init() {
 	flag.StringVar(&assignor, "assignor", "range", "Consumer group partition assignment strategy (range, roundrobin, sticky)")
 	flag.BoolVar(&oldest, "oldest", true, "Kafka consumer consume initial offset from oldest")
 	flag.BoolVar(&verbose, "verbose", false, "Sarama logging")
+	flag.BoolVar(&print, "print", true, "Print read values")
 	flag.Parse()
 
 	if len(brokers) == 0 {
@@ -64,6 +71,8 @@ func main() {
 	if err != nil {
 		log.Panicf("Error parsing Kafka version: %v", err)
 	}
+
+	go metrics.Log(metrics.DefaultRegistry, 5*time.Second, log.New(os.Stderr, "metrics: ", log.LstdFlags))
 
 	/**
 	 * Construct a new Sarama configuration.
@@ -202,9 +211,12 @@ func (consumer *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 				return nil
 			}
 
-			// log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+			if print {
+				log.Printf("Message claimed: value = %s, timestamp = %v, topic = %s", string(message.Value), message.Timestamp, message.Topic)
+			}
 
 			session.MarkMessage(message, "")
+			recordsRate.Mark(recordsNumber)
 		// Should return when `session.Context()` is done.
 		// If not, will raise `ErrRebalanceInProgress` or `read tcp <ip>:<port>: i/o timeout` when kafka rebalance. see:
 		// https://github.com/IBM/sarama/issues/1192
